@@ -34,16 +34,55 @@
         브라우저가 오디오를 지원하지 않습니다.
     </audio>
 
+    <!-- 🔥 음성 인식 버튼 (숨겨져 있음) -->
+    <button id="voiceBtn" style="display:none;">Voice</button>
+
     <script>
         function goToMenu() {
             window.location.href = "{{ url_for('menu') }}";
         }
-    </script>
 
-    <script>
+        // 🔊 음성 인식 시작 함수
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = "ko-KR";  // 한국어 인식
+            recognition.continuous = false; // 한 문장만 인식
+            recognition.interimResults = false;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const result = event.results[0][0].transcript;
+                console.log("음성 인식 결과:", result);
+
+                // 명령어 처리
+                if (result.includes("다음 화면으로") || result.includes("다음 화면") || result.includes("넘겨")) {
+                    goToMenu();
+                } else {
+                    alert("인식된 문장: " + result + "\n메뉴 이동 명령이 아닙니다.");
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.log("음성 인식 오류:", event.error);
+            };
+        }
+
+        // 🔵 페이지 로드 후 자동 음성 안내 & **3초 뒤 음성 인식 시작**
         window.addEventListener("load", () => {
             const audio = new Audio("{{ url_for('static', filename='welcome.mp3') }}");
             audio.play().catch(e => console.warn("자동재생 차단됨:", e));
+
+            // 음성 안내 후 3초 뒤에 음성 인식 시작
+            setTimeout(() => {
+                startVoiceRecognition();
+            }, 3000);
         });
     </script>
 </body>

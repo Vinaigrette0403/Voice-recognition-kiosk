@@ -159,31 +159,52 @@
       <img src="{{ url_for('static', filename='images/americano.jpg') }}" />
       <h3>아메리카노(2,000원)</h3>
     </div>
+
     <div class="menu-item" onclick="openOptionModal('카페라떼', 3000)">
       <img src="{{ url_for('static', filename='images/latte.jpg') }}" />
       <h3>카페라떼(3,000원)</h3>
     </div>
+
     <div class="menu-item" onclick="openOptionModal('초코라떼',4500)">
-        <img src="{{ url_for('static', filename='images/choco.jpeg') }}">
-        <h3>초코라떼(4,500원)</h3>
-    </div>        
-        <div class="menu-item" onclick="openOptionModal('아이스티',3000)">
-        <img src="{{ url_for('static', filename='images/icetea.jpg') }}">
-        <h3>아이스티(3,000원)</h3>
+      <img src="{{ url_for('static', filename='images/choco.jpeg') }}">
+      <h3>초코라떼(4,500원)</h3>
     </div>
-        <div class="menu-item" onclick="openOptionModal('녹차라떼',4000)">
-        <img src="{{ url_for('static', filename='images/green.png') }}">
-        <h3>녹차라떼(4,000원)</h3>
+
+    <div class="menu-item" onclick="openOptionModal('아이스티',3000)">
+      <img src="{{ url_for('static', filename='images/icetea.jpg') }}">
+      <h3>아이스티(3,000원)</h3>
     </div>
-        <div class="menu-item" onclick="openOptionModal('딸기라떼',5000)">
-        <img src="{{ url_for('static', filename='images/strawberry.jpg') }}">
-        <h3>딸기라떼(5,000원)</h3>
+
+    <div class="menu-item" onclick="openOptionModal('녹차라떼',4000)">
+      <img src="{{ url_for('static', filename='images/green.png') }}">
+      <h3>녹차라떼(4,000원)</h3>
     </div>
-        <div class="menu-item" onclick="openOptionModal('바닐라라떼',3500)">
-        <img src="{{ url_for('static', filename='images/vanilla.png') }}">
-        <h3>바닐라라떼(3,500원)</h3>
+
+    <div class="menu-item" onclick="openOptionModal('딸기라떼',5000)">
+      <img src="{{ url_for('static', filename='images/strawberry.jpg') }}">
+      <h3>딸기라떼(5,000원)</h3>
     </div>
-    
+
+    <div class="menu-item" onclick="openOptionModal('바닐라라떼',3500)">
+      <img src="{{ url_for('static', filename='images/vanilla.png') }}">
+      <h3>바닐라라떼(3,500원)</h3>
+    </div>
+
+    <!-- 🔽 디저트 3개: 음료랑 똑같은 디자인 + 바로 장바구니 -->
+    <div class="menu-item" onclick="addDessert('치즈케이크', 4500)">
+      <img src="{{ url_for('static', filename='images/cheesecake.jpg') }}" />
+      <h3>치즈케이크(4,500원)</h3>
+    </div>
+
+    <div class="menu-item" onclick="addDessert('와플', 4000)">
+      <img src="{{ url_for('static', filename='images/waffle.jpg') }}" />
+      <h3>와플(4,000원)</h3>
+    </div>
+
+    <div class="menu-item" onclick="addDessert('샌드위치', 5000)">
+      <img src="{{ url_for('static', filename='images/sandwich.jpg') }}" />
+      <h3>샌드위치(5,000원)</h3>
+    </div>
   </div>
 
   <div id="cart">
@@ -316,6 +337,27 @@
   updateTotal();
   playVoice("해당 음료가 삭제되었습니다");
 }
+   function addDessert(name, price) {
+    // li 한 줄 생성
+    const li = document.createElement('li');
+    li.dataset.name = name;
+    li.dataset.price = price;
+    li.dataset.count = 1;
+    li.dataset.options = "";   // 디저트는 옵션 없음
+
+    li.innerHTML = `
+      ${name} -
+      <span class="item-qty">1</span>개
+      <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
+      <button class="qty-btn" onclick="changeQty(this, -1)">-</button>
+      <span class="item-subtotal">${price}원</span>
+      <button class="delete-btn" onclick="deleteItem(this)">삭제</button>
+    `;
+
+    document.getElementById('cart-items').appendChild(li);
+    updateTotal();
+    playVoice(name + "가 장바구니에 담겼습니다");
+  }
 
   
   
