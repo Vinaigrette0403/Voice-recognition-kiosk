@@ -440,73 +440,154 @@
          document.getElementById('total').innerText = total;
     }
 
-  function startVoiceOrder() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'ko-KR';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+// 🔊 메뉴 화면 실시간 음성 인식
+function startVoiceOrder() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+    return;
+  }
 
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'ko-KR';
+  recognition.interimResults = false;   // 중간 결과 X, 확정된 문장만
+  recognition.continuous = true;        // 🔥 계속 듣기 모드
+
+  recognition.onresult = function(event) {
+    const last = event.results[event.results.length - 1];
+    const speechText = last[0].transcript.trim();
+    console.log("음성 인식 결과:", speechText);
+    handleVoiceCommand(speechText);     // 이미 구현한 음성 주문 로직 호출
+  };
+
+  recognition.onerror = function(event) {
+    console.log("음성 인식 오류:", event.error);
+  };
+
+  recognition.onend = function() {
+    // 마이크가 끊어져도 자동으로 다시 시작해서 '실시간' 유지
+    try { recognition.start(); } catch (e) {
+      console.log("음성 인식 재시작 실패:", e);
+    }
+  };
+
+  try {
     recognition.start();
+  } catch (e) {
+    console.log("음성 인식 시작 실패:", e);
+  }
+}
+// 🔵 메뉴 페이지 로드되면 자동으로 음성 인식 시작
+window.addEventListener("load", () => {
+  startVoiceOrder();
+});
 
-    recognition.onresult = function(event) {
-      const speechText = event.results[0][0].transcript;
-      console.log("음성 인식 결과:", speechText);
-      handleVoiceCommand(speechText);
-    };
+function handleVoiceCommand(text) {
+  console.log("handleVoiceCommand:", text);
 
-    recognition.onerror = function(event) {
-      alert("음성 인식 오류: " + event.error);
-    };
+  // 🔹 음료 / 디저트 이름 분리
+  const drinkNames = ['아메리카노', '카페라떼', '초코라떼', '딸기라떼', '녹차라떼', '바닐라라떼','아이스티'];
+  const dessertNames = ['치즈케이크', '와플', '샌드위치'];
+  const menuNames = drinkNames.concat(dessertNames);
+
+  const options = {
+    temp: ['아이스', '핫'],
+    add: ['샷 추가', '휘핑 추가', '바닐라 시럽'],
+    req: ['얼음 적게', '연하게']
+  };
+
+  // 1) 어떤 메뉴인지 찾기
+  let foundMenu = menuNames.find(name => text.includes(name));
+
+  // 메뉴를 못 찾으면 → 조용히 무시 (가끔만 안내)
+  if (!foundMenu) {
+    console.log("메뉴명을 인식하지 못했습니다:", text);
+
+    const now = Date.now();
+    if (now - lastVoiceErrorTime > 3000) {  // 3초에 한 번만 안내
+      // 필요하면 TTS 안내 켜기
+      // playVoice("죄송합니다. 다시 한 번 메뉴 이름과 온도를 말씀해 주세요.");
+      lastVoiceErrorTime = now;
+    }
+    return;
   }
 
-  function handleVoiceCommand(text) {
-    const menuNames = ['아메리카노', '카페라떼', '초코라떼', '딸기라떼', '녹차라떼', '바닐라라떼','아이스티'];
-    const options = {
-      temp: ['아이스', '핫'],
-      add: ['샷 추가', '휘핑 추가', '바닐라 시럽'],
-      req: ['얼음 적게', '연하게']
-    };
+  const isDessert = dessertNames.includes(foundMenu);
 
-    let foundMenu = menuNames.find(name => text.includes(name));
-    if (!foundMenu) return alert("메뉴명을 인식하지 못했습니다.");
+  // 2) 온도 처리 (디저트는 건너뛰기)
+  let temp = '';
+  if (!isDessert) {
+    temp = text.includes('아이스')
+      ? 'ICE'
+      : (text.includes('핫') ? 'HOT' : '');
 
-    let temp = text.includes('아이스') ? 'ICE' : (text.includes('핫') ? 'HOT' : '');
-    if (!temp) return alert("온도를 명확히 말씀해주세요. (아이스 또는 핫)");
-
-    let reqs = options.req.filter(opt => text.includes(opt));
-    let adds = options.add.filter(opt => text.includes(opt));
-
-    const priceMap = {
-      '아메리카노': 2000,
-      '카페라떼': 3000,
-      '초코라떼': 4500,
-      '딸기라떼': 5000,
-      '녹차라떼': 4000,
-      '바닐라라떼': 3500,
-      '아이스티': 3000
-    };
-
-    let basePrice = priceMap[foundMenu];
-    let extra = adds.length * 500;
-    let finalPrice = basePrice + extra;
-    let optionsSummary = [temp, ...reqs, ...adds].join(', ');
-
-    const li = document.createElement('li');
-    li.dataset.name = foundMenu;
-    li.dataset.price = finalPrice;
-    li.dataset.count = 1;
-    li.dataset.options = optionsSummary;
-    li.innerHTML = `
-        ${foundMenu} (${optionsSummary}) -
-        <span class="item-qty">1</span>개
-        <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
-        <button class="qty-btn" onclick="changeQty(this, -1)">-</button>
-        <span class="item-subtotal">${finalPrice}원</span>
-        <button class="delete-btn" onclick="this.parentElement.remove(); updateTotal();">삭제</button>
-    `;
-    document.getElementById('cart-items').appendChild(li);
-    updateTotal();
+    if (!temp) {
+      const now = Date.now();
+      if (now - lastVoiceErrorTime > 3000) {
+        // 음료일 때만 온도 안내
+        playVoice("아이스 또는 핫을 함께 말씀해 주세요.");
+        lastVoiceErrorTime = now;
+      }
+      return;  // 온도 없으면 음료 주문은 넣지 않음
+    }
   }
+
+  // 3) 요청사항 / 추가옵션 (디저트는 옵션 없이)
+  let reqs = [];
+  let adds = [];
+
+  if (!isDessert) {
+    reqs = options.req.filter(opt => text.includes(opt));
+    adds = options.add.filter(opt => text.includes(opt));
+  }
+
+  // 4) 가격표 (디저트 포함)
+  const priceMap = {
+    '아메리카노': 2000,
+    '카페라떼': 3000,
+    '초코라떼': 4500,
+    '딸기라떼': 5000,
+    '녹차라떼': 4000,
+    '바닐라라떼': 3500,
+    '아이스티': 3000,
+    '치즈케이크': 4500,
+    '와플': 4000,
+    '샌드위치': 5000
+  };
+
+  let basePrice = priceMap[foundMenu];
+  let extra = adds.length * 500;
+  let finalPrice = basePrice + extra;
+
+  const optionsSummary = [temp, ...reqs, ...adds].filter(Boolean).join(', ');
+  const optionText = optionsSummary ? ` (${optionsSummary})` : '';
+
+  // 5) 장바구니에 1개 담기 (디저트/음료 동일, 옵션만 차이)
+  const li = document.createElement('li');
+  li.dataset.name = foundMenu;
+  li.dataset.price = finalPrice;
+  li.dataset.count = 1;
+  li.dataset.options = optionsSummary;
+  li.innerHTML = `
+      ${foundMenu}${optionText} -
+      <span class="item-qty">1</span>개
+      <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
+      <button class="qty-btn" onclick="changeQty(this, -1)">-</button>
+      <span class="item-subtotal">${finalPrice}원</span>
+      <button class="delete-btn" onclick="this.parentElement.remove(); updateTotal();">삭제</button>
+  `;
+  document.getElementById('cart-items').appendChild(li);
+  updateTotal();
+
+  // 간단한 음성 피드백
+  if (isDessert) {
+    playVoice(`${foundMenu}를 장바구니에 담았습니다`);
+  } else {
+    playVoice(`${foundMenu}를 장바구니에 담았습니다`);
+  }
+}
+
+
   
 
 </script>
