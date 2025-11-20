@@ -62,7 +62,7 @@
                 console.log("음성 인식 결과:", result);
 
                 // 명령어 처리
-                if (result.includes("다음 화면으로  ") || result.includes("다음 화면") || result.includes("넘겨")) {
+                if (result.includes("시작") || result.includes("주문") || result.includes("넘겨")) {
                     goToMenu();
                 } else {
                     alert("인식된 문장: " + result + "\n메뉴 이동 명령이 아닙니다.");
