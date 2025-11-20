@@ -376,6 +376,7 @@
     window.onload = () => {
       const audio = new Audio("/speak/결제를 진행합니다.");
       audio.play();
+    
     };
   </script>
   
@@ -396,7 +397,79 @@
     document.getElementById(hiddenId).value = input.value;
   }
 </script>
+<script>
+// --- 음성 인식 객체 설정 ---
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = new SpeechRecognition();
+recognition.lang = "ko-KR";
+recognition.continuous = true; // 계속 듣기
+recognition.interimResults = false;
 
+// --- 페이지 진입 시 자동 음성인식 시작 ---
+window.onload = function () {
+  startRecognition();
+};
+
+function startRecognition() {
+  recognition.start();
+  console.log("음성인식 시작됨 - payment 페이지");
+}
+
+// --- 음성 인식 결과 처리 ---
+recognition.onresult = function (event) {
+  let speech =
+    event.results[event.results.length - 1][0].transcript.trim();
+  console.log("음성인식 결과:", speech);
+
+  if (speech.includes("적립")) {
+    openModal("pointModal"); // 적립 모달 열기
+  } else if (speech.includes("쿠폰")) {
+    openModal("couponModal"); // 쿠폰 모달 열기
+  } else if (speech.includes("스탬프") || speech.includes("현황")) {
+    openModal("checkStampModal"); // 스탬프 확인 모달 열기
+  } else if (speech.includes("돌아가기")) {
+    window.location.href = "/menu";
+  } else if (speech.includes("카드결제") || speech.includes("결제")) {
+    openModal("cardModal"); // 카드결제 모달 열기
+  } else if (speech.includes("승인")) {
+    window.location.href = "/payfin";
+  }
+  /*
+  if (isListeningPhoneNumber) {
+    let numbers = speech.replace(/[^0-9]/g, "");   // 숫자만 추출
+    if (numbers.length > 0) {
+      let inputBox = document.querySelector("#pointModal input, #couponModal input, #checkStampModal input");
+      let hiddenInput = document.querySelector("input[type='hidden']");
+      inputBox.value = numbers;
+      hiddenInput.value = numbers;
+    }
+  }
+  */
+};
+
+// --- 끊기면 자동 재시작 ---
+recognition.onend = function () {
+  recognition.start();
+};
+
+// --- 마이크 권한 에러 처리 ---
+recognition.onerror = function (event) {
+  console.error("음성인식 오류:", event.error);
+  if (event.error === "not-allowed") {
+    alert("마이크 권한을 허용해주세요!");
+  }
+};
+window.addEventListener("load", () => {
+
+  // 1️⃣ 결제 안내 음성 재생
+  const audio = new Audio("/speak/결제를 진행합니다.");
+  audio.play().catch(e => console.log("음성 재생 오류:", e));
+
+  // 2️⃣ 실시간 음성 인식 시작
+  startRecognition();
+});
+</script>
 
 
 

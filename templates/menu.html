@@ -485,6 +485,21 @@ window.addEventListener("load", () => {
 function handleVoiceCommand(text) {
   console.log("handleVoiceCommand:", text);
 
+    // ✅ 0. 결제 명령 먼저 처리
+  if (text.includes("결제하기") || text.includes("결제")) {
+    const items = document.querySelectorAll('#cart-items li');
+    if (items.length === 0) {
+      // 장바구니가 비어 있으면 안내만
+      playVoice("장바구니가 비어 있습니다. 메뉴를 먼저 담아주세요.");
+      return;
+    } else {
+      playVoice("결제 화면으로 이동합니다.");
+      checkout();   // 👉 기존 결제 버튼과 동일한 동작
+      return;
+    }
+  }
+
+
   // 🔹 음료 / 디저트 이름 분리
   const drinkNames = ['아메리카노', '카페라떼', '초코라떼', '딸기라떼', '녹차라떼', '바닐라라떼','아이스티'];
   const dessertNames = ['치즈케이크', '와플', '샌드위치'];
